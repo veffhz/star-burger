@@ -92,6 +92,8 @@ class Order(models.Model):
         default=OrderStatusChoices.NEW
     )
 
+    comment = models.TextField('комментарий', blank=True)
+
     objects = OrderQuerySet.as_manager()
 
     def __str__(self):
@@ -103,8 +105,15 @@ class Order(models.Model):
 
 
 class Item(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items', verbose_name='заказ')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='order_items', verbose_name='товар')
+    order = models.ForeignKey(
+        Order, on_delete=models.CASCADE, related_name='items', verbose_name='заказ'
+
+    )
+
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name='order_items', verbose_name='товар'
+    )
+
     quantity = models.PositiveIntegerField('количество')
     cost = models.DecimalField('цена', max_digits=8, decimal_places=2)
 
