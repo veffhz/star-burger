@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.http import JsonResponse
 from django.templatetags.static import static
 from rest_framework import status
@@ -64,7 +65,8 @@ def product_list_api(request):
 def register_order(request):
     order_serializer = OrderSerializer(data=request.data)
     order_serializer.is_valid(raise_exception=True)
-    order_serializer.save()
+    with transaction.atomic():
+        order_serializer.save()
     return Response(
         order_serializer.data, status=status.HTTP_201_CREATED
     )
