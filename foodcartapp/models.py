@@ -1,6 +1,6 @@
-from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import Sum
+from django.utils.translation import gettext_lazy as _
 
 
 class Restaurant(models.Model):
@@ -72,11 +72,25 @@ class OrderQuerySet(models.QuerySet):
         return self.annotate(items_cost=Sum('items__cost'))
 
 
+class OrderStatusChoices(models.TextChoices):
+    NEW = 'new', _('Необработанный')
+    PROC = 'processing', _('Обрабатывается')
+    COLL = 'collected', _('Собран')
+    DONE = 'done', _('Выполнен')
+
+
 class Order(models.Model):
     address = models.CharField('адрес', max_length=100)
     firstname = models.CharField('имя', max_length=50)
     lastname = models.CharField('фамилия', max_length=50)
     phonenumber = models.CharField('мобильный телефон', max_length=50) # noqa
+
+    status = models.CharField(
+        'статус',
+        max_length=100,
+        choices=OrderStatusChoices.choices,
+        default=OrderStatusChoices.NEW
+    )
 
     objects = OrderQuerySet.as_manager()
 
