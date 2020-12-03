@@ -70,7 +70,7 @@ class Order(models.Model):
     address = models.CharField('адрес', max_length=100)
     firstname = models.CharField('имя', max_length=50)
     lastname = models.CharField('фамилия', max_length=50)
-    phone_number = models.CharField('мобильный телефон', max_length=50)
+    phonenumber = models.CharField('мобильный телефон', max_length=50) # noqa
 
     def __str__(self):
         return f'{self.firstname} {self.lastname} {self.address}'
