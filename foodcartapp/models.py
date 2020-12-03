@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import Sum
 
 
 class Restaurant(models.Model):
@@ -66,11 +67,18 @@ class RestaurantMenuItem(models.Model):
         ]
 
 
+class OrderQuerySet(models.QuerySet):
+    def cost(self):
+        return self.annotate(items_cost=Sum('items__cost'))
+
+
 class Order(models.Model):
     address = models.CharField('адрес', max_length=100)
     firstname = models.CharField('имя', max_length=50)
     lastname = models.CharField('фамилия', max_length=50)
     phonenumber = models.CharField('мобильный телефон', max_length=50) # noqa
+
+    objects = OrderQuerySet.as_manager()
 
     def __str__(self):
         return f'{self.firstname} {self.lastname} {self.address}'
@@ -84,6 +92,12 @@ class Item(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items', verbose_name='заказ')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='order_items', verbose_name='товар')
     quantity = models.PositiveIntegerField('количество')
+    cost = models.DecimalField('цена', max_digits=8, decimal_places=2)
+
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            self.cost = self.quantity * self.product.price # noqa
+        super(Item, self).save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.product} {self.order}'

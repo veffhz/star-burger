@@ -6,9 +6,11 @@ from foodcartapp.models import Order, Item
 class ItemSerializer(ModelSerializer):
     class Meta:
         model = Item
+        read_only_fields = ('cost',)
         fields = [
             'quantity',
             'product',
+            'cost'
         ]
 
 
