@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.shortcuts import reverse
 from django.utils.html import format_html
 
+from .models import Item
+from .models import Order
 from .models import Product
 from .models import ProductCategory
 from .models import Restaurant
@@ -103,3 +105,14 @@ class ProductAdmin(admin.ModelAdmin):
 @admin.register(ProductCategory)
 class ProductAdmin(admin.ModelAdmin):
     pass
+
+
+class ItemInline(admin.TabularInline):
+    model = Item
+
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    inlines = [
+        ItemInline,
+    ]
