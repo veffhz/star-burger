@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import Sum
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
@@ -93,6 +94,10 @@ class Order(models.Model):
     )
 
     comment = models.TextField('комментарий', blank=True)
+
+    registered_at = models.DateTimeField('дата создания заказа', default=timezone.now)
+    called_at = models.DateTimeField('дата звонка', null=True, blank=True)
+    delivered_at = models.DateTimeField('дата доставки', null=True, blank=True)
 
     objects = OrderQuerySet.as_manager()
 

@@ -114,6 +114,10 @@ class ItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
+    readonly_fields = ('registered_at',)
+    inlines = [
+        ItemInline,
+    ]
 
     def response_post_save_change(self, request, obj):
         res = super().response_post_save_change(request, obj)
@@ -121,7 +125,3 @@ class OrderAdmin(admin.ModelAdmin):
             return HttpResponseRedirect(reverse(request.GET['next']))
         else:
             return res
-
-    inlines = [
-        ItemInline,
-    ]
