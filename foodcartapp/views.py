@@ -1,12 +1,11 @@
-import json
-
 from django.http import JsonResponse
 from django.templatetags.static import static
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .models import Product, Order, Item
+from .models import Product
+from .serializers import OrderSerializer
 
 
 def banners_list_api(request):
@@ -63,24 +62,9 @@ def product_list_api(request):
 
 @api_view(['POST'])
 def register_order(request):
-    try:
-        order = Order.objects.create(
-            firstname=request.data['firstname'],
-            lastname=request.data['lastname'],
-            phone_number=request.data['phonenumber'],
-            address=request.data['address'],
-        )
-
-        products = request.data.get('products', None)
-
-        if products and isinstance(products, list):
-            for product in products:
-                Item.objects.create(
-                    product_id=product['product'], quantity=product['quantity'], order=order
-                )
-        else:
-            raise ValueError('products is not present or not list')
-
-    except ValueError as e:
-        return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    return Response({})
+    order_serializer = OrderSerializer(data=request.data)
+    order_serializer.is_valid(raise_exception=True)
+    order_serializer.save()
+    return Response(
+        order_serializer.data, status=status.HTTP_201_CREATED
+    )
