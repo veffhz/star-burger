@@ -2,6 +2,7 @@ import json
 
 from django.http import JsonResponse
 from django.templatetags.static import static
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -70,11 +71,16 @@ def register_order(request):
             address=request.data['address'],
         )
 
-        for product in request.data['products']:
-            Item.objects.create(
-                product_id=product['product'], quantity=product['quantity'], order=order
-            )
+        products = request.data.get('products', None)
 
-    except ValueError:
-        return Response({'message': 'Error'}, status=500)
+        if products and isinstance(products, list):
+            for product in products:
+                Item.objects.create(
+                    product_id=product['product'], quantity=product['quantity'], order=order
+                )
+        else:
+            raise ValueError('products is not present or not list')
+
+    except ValueError as e:
+        return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     return Response({})
