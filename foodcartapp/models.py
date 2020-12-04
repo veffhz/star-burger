@@ -80,6 +80,11 @@ class OrderStatusChoices(models.TextChoices):
     DONE = 'done', _('Выполнен')
 
 
+class PaidMethodChoices(models.TextChoices):
+    CASH = 'cash', _('Наличностью')
+    CARD = 'card', _('Электронно')
+
+
 class Order(models.Model):
     address = models.CharField('адрес', max_length=100)
     firstname = models.CharField('имя', max_length=50)
@@ -91,6 +96,13 @@ class Order(models.Model):
         max_length=100,
         choices=OrderStatusChoices.choices,
         default=OrderStatusChoices.NEW
+    )
+
+    paid_method = models.CharField(
+        'способ оплаты',
+        max_length=50,
+        choices=PaidMethodChoices.choices,
+        default=PaidMethodChoices.CASH
     )
 
     comment = models.TextField('комментарий', blank=True)
