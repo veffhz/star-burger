@@ -31,14 +31,14 @@
         <td>{{ order.get_status_display }}</td>
         <td>{{ order.get_paid_method_display }}</td>
         <td>{{ order.items_cost }} руб.</td>
-        <td>{{ order.firstname }} {{ item.lastname }}</td>
+        <td>{{ order.firstname }} {{ order.lastname }}</td>
         <td>{{ order.phonenumber }}</td>
         <td>{{ order.address }}</td>
         <td>{{ order.comment }}</td>
-        <td>
+        <td style="width: 20%;">
           <details>
             <summary>Развернуть</summary>
-            <ul>
+            <ul style="padding-left: 1em;">
               {% if order.restaurant %}
                 <li>{{ order.restaurant }}</li>
               {% else %}
