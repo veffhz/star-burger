@@ -1,4 +1,5 @@
 from django import forms
+from django.core.cache import cache
 from django.views import View
 from django.conf import settings
 from django.urls import reverse_lazy
@@ -106,12 +107,25 @@ def view_orders(request):
 
     for order in orders:
         order_items[order] = []
-        order_lon, order_lat = fetch_coordinates(settings.YANDEX_API_KEY, order.address)
+
+        order_cached_coordinates = cache.get(order.address.replace(' ', ''))
+        if not order_cached_coordinates:
+            order_cached_coordinates = fetch_coordinates(settings.YANDEX_API_KEY, order.address)
+            cache.set(order.address.replace(' ', ''), order_cached_coordinates, timeout=None)
+
+        order_lon, order_lat = order_cached_coordinates
 
         for restaurant in restaurant_items:
             result = order.products_set.issubset(restaurant_items[restaurant])
+
             if result:
-                restaurant_lon, restaurant_lat = fetch_coordinates(settings.YANDEX_API_KEY, restaurant.address)
+                restaurant_cached_coordinates = cache.get(restaurant.address.replace(' ', ''))
+
+                if not restaurant_cached_coordinates:
+                    restaurant_cached_coordinates = fetch_coordinates(settings.YANDEX_API_KEY, restaurant.address)
+                    cache.set(restaurant.address.replace(' ', ''), restaurant_cached_coordinates, timeout=None)
+
+                restaurant_lon, restaurant_lat = restaurant_cached_coordinates
                 distance_km = distance.distance((order_lat, order_lon), (restaurant_lat, restaurant_lon)).km
                 order_items[order].append({
                     'restaurant': restaurant, 'distance_km': round(distance_km, 3)
