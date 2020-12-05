@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import Sum
+from django.db.models import Sum, Prefetch
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -52,10 +52,27 @@ class Product(models.Model):
         verbose_name_plural = 'товары'
 
 
+class RestaurantMenuItemQuerySet(models.QuerySet):
+
+    def available(self):
+        return self.filter(availability=True)
+
+    def group_by_restaurant(self):
+        restaurant_items = dict()
+
+        items = self.available().select_related('restaurant', 'product').all()
+
+        for item in items:
+            restaurant_items.setdefault(item.restaurant, set()).add(item.product)
+        return restaurant_items
+
+
 class RestaurantMenuItem(models.Model):
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='menu_items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='menu_items')
     availability = models.BooleanField('в продаже', default=True, db_index=True)
+
+    objects = RestaurantMenuItemQuerySet.as_manager()
 
     def __str__(self):
         return f"{self.restaurant.name} - {self.product.name}"
@@ -71,6 +88,17 @@ class RestaurantMenuItem(models.Model):
 class OrderQuerySet(models.QuerySet):
     def cost(self):
         return self.annotate(items_cost=Sum('items__cost'))
+
+    def fetch_with_products(self):
+        for order in self:
+            order.products_set = {item.product for item in order.items.all()}
+        return list(self)
+
+    def prefetch_products(self):
+        prefetch = Prefetch(
+            'items', queryset=Item.objects.select_related('product').all()
+        )
+        return self.prefetch_related(prefetch)
 
 
 class OrderStatusChoices(models.TextChoices):
@@ -111,6 +139,11 @@ class Order(models.Model):
     called_at = models.DateTimeField('дата звонка', null=True, blank=True)
     delivered_at = models.DateTimeField('дата доставки', null=True, blank=True)
 
+    restaurant = models.ForeignKey(
+        Restaurant, on_delete=models.CASCADE,
+        related_name='orders', null=True, blank=True
+    )
+
     objects = OrderQuerySet.as_manager()
 
     def __str__(self):
@@ -124,7 +157,6 @@ class Order(models.Model):
 class Item(models.Model):
     order = models.ForeignKey(
         Order, on_delete=models.CASCADE, related_name='items', verbose_name='заказ'
-
     )
 
     product = models.ForeignKey(

@@ -3,12 +3,13 @@ from django.shortcuts import redirect, render
 from django.views import View
 from django.urls import reverse_lazy
 from django.contrib.auth.decorators import user_passes_test
-
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 
+from itertools import groupby
 
-from foodcartapp.models import Product, Restaurant, Order
+from foodcartapp.models import Product, Restaurant, Item
+from foodcartapp.models import Order, RestaurantMenuItem
 
 
 class Login(forms.Form):
@@ -97,7 +98,18 @@ def view_restaurants(request):
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    order_items = Order.objects.cost().all()
+    orders = Order.objects.prefetch_products().fetch_with_products()
+    restaurant_items = RestaurantMenuItem.objects.group_by_restaurant()
+
+    order_items = {}
+
+    for order in orders:
+        order_items[order] = []
+        for restaurant in restaurant_items:
+            result = order.products_set.issubset(restaurant_items[restaurant])
+            if result:
+                order_items[order].append(restaurant)
+
     return render(request, template_name='order_items.html', context={
         'order_items': order_items
     })
