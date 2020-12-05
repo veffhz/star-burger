@@ -89,6 +89,9 @@ class OrderQuerySet(models.QuerySet):
     def cost(self):
         return self.annotate(items_cost=Sum('items__cost'))
 
+    def new_orders(self):
+        return self.filter(status=OrderStatusChoices.NEW)
+
     def fetch_with_products(self):
         for order in self:
             order.products_set = {item.product for item in order.items.all()}

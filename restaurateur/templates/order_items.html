@@ -25,7 +25,7 @@
       <th>Ссылка на админку</th>
     </tr>
 
-    {% for order, restaurants in order_items.items %}
+    {% for order, restaurants_info in order_items.items %}
       <tr>
         <td>{{ order.id }}</td>
         <td>{{ order.get_status_display }}</td>
@@ -42,8 +42,9 @@
               {% if order.restaurant %}
                 <li>{{ order.restaurant }}</li>
               {% else %}
-                {% for restaurant in restaurants %}
-                  <li>{{ restaurant }}</li>
+                {% for restaurant_info in restaurants_info %}
+                  <li>{{ restaurant_info.restaurant }} -</li>
+                  <p>{{ restaurant_info.distance_km }} км.</p>
                 {% endfor %}
               {% endif %}
             </ul>

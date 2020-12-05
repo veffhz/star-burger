@@ -1,15 +1,16 @@
 from django import forms
-from django.shortcuts import redirect, render
 from django.views import View
+from django.conf import settings
 from django.urls import reverse_lazy
-from django.contrib.auth.decorators import user_passes_test
+from django.shortcuts import redirect, render
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
+from django.contrib.auth.decorators import user_passes_test
+from geopy import distance
 
-from itertools import groupby
-
-from foodcartapp.models import Product, Restaurant, Item
+from foodcartapp.models import Product, Restaurant
 from foodcartapp.models import Order, RestaurantMenuItem
+from restaurateur.geo_helper import fetch_coordinates
 
 
 class Login(forms.Form):
@@ -98,17 +99,27 @@ def view_restaurants(request):
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    orders = Order.objects.cost().prefetch_products().fetch_with_products()
+    orders = Order.objects.new_orders().cost().prefetch_products().fetch_with_products()
     restaurant_items = RestaurantMenuItem.objects.group_by_restaurant()
 
     order_items = {}
 
     for order in orders:
         order_items[order] = []
+        order_lon, order_lat = fetch_coordinates(settings.YANDEX_API_KEY, order.address)
+
         for restaurant in restaurant_items:
             result = order.products_set.issubset(restaurant_items[restaurant])
             if result:
-                order_items[order].append(restaurant)
+                restaurant_lon, restaurant_lat = fetch_coordinates(settings.YANDEX_API_KEY, restaurant.address)
+                distance_km = distance.distance((order_lat, order_lon), (restaurant_lat, restaurant_lon)).km
+                order_items[order].append({
+                    'restaurant': restaurant, 'distance_km': round(distance_km, 3)
+                })
+
+        order_items[order].sort(
+            key=lambda restaurant_pair: restaurant_pair['distance_km']
+        )
 
     return render(request, template_name='order_items.html', context={
         'order_items': order_items
